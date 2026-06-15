@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 지방선거 AI — 후보자·공약·선거 정보</title>
+  <meta name="description" content="2026 전국동시지방선거 후보자 정보, AI 질의응답, 선거 일정 안내. 데이터 출처: 중앙선거관리위원회.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="page-loading">
+  <div class="pl-inner">
+    <div class="pl-logo">🗳️</div>
+    <div class="pl-spinner"></div>
+    <p class="pl-title">2026 지방선거 AI</p>
+    <p class="pl-sub">서비스 준비 중입니다…<br><small>처음 접속 시 20~30초 소요될 수 있습니다</small></p>
+  </div>
+</div>
+<div id="app">
+
+  <!-- ── Navigation ──────────────────────────────────────────────────── -->
+  <nav id="nav">
+    <div class="logo" data-page="home">
+      🗳️ 선거 AI
+      <span class="badge">2026</span>
+    </div>
+    <div id="nav-links">
+      <a data-page="home">홈</a>
+      <a data-page="candidates">후보자</a>
+      <a data-page="compare">비교</a>
+      <a data-page="ai">AI 질문</a>
+      <a data-page="guide">투표 안내</a>
+    </div>
+    <div id="nav-right">
+      <div id="region-badge">📍 <span id="region-label">지역 선택</span></div>
+    </div>
+  </nav>
+
+  <!-- ── Region Modal ────────────────────────────────────────────────── -->
+  <div id="region-modal">
+    <div id="region-modal-inner">
+      <h2>🗺️ 내 지역구 선택</h2>
+      <div id="region-grid"><!-- JS로 생성 --></div>
+      <button class="btn-outline" id="region-modal-close" style="margin-top:16px;width:100%">닫기</button>
+    </div>
+  </div>
+
+  <!-- ── Main ───────────────────────────────────────────────────────── -->
+  <main id="main">
+
+    <!-- 홈 -->
+    <section id="page-home" class="page">
+      <div id="insight-banner">
+        <h2 id="insight-title">내 지역 선거 결과</h2>
+        <p id="insight-sub">지역을 선택하면 맞춤 정보를 보여드립니다.</p>
+        <div class="insight-grid" id="insight-pills"></div>
+        <div id="insight-actions"></div>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-box"><div class="stat-num" id="stat-total">-</div><div class="stat-label">전체 후보자</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-winners">-</div><div class="stat-label">당선자</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-regions">17</div><div class="stat-label">광역시도</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-docs">-</div><div class="stat-label">AI 색인 문서</div></div>
+      </div>
+
+      <div class="section-title">🏆 시도별 당선자</div>
+      <p class="section-sub">2026 전국동시지방선거 광역단체장 당선자 현황 (출처: 중앙선거관리위원회)</p>
+      <div class="card-grid" id="winners-grid"></div>
+
+      <div class="compare-cta">
+        <div>
+          <strong>⚖️ 후보자 1:1 비교</strong>
+          <p>같은 지역 후보자를 나란히 비교해 공약·득표율을 한눈에 확인하세요.</p>
+        </div>
+        <button class="btn-white" onclick="goTo('compare')">비교 보러 가기 →</button>
+      </div>
+    </section>
+
+    <!-- 후보자 -->
+    <section id="page-candidates" class="page">
+      <div class="section-title">👤 후보자 목록</div>
+      <p class="section-sub">2026 지방선거 광역단체장 후보자 정보 · 데이터 출처: 중앙선거관리위원회</p>
+
+      <div class="filter-bar">
+        <select class="filter-select" id="filter-region">
+          <option value="">전체 지역</option>
+        </select>
+        <select class="filter-select" id="filter-party">
+          <option value="">전체 정당</option>
+          <option value="더불어민주당">더불어민주당</option>
+          <option value="국민의힘">국민의힘</option>
+          <option value="조국혁신당">조국혁신당</option>
+          <option value="무소속">무소속</option>
+        </select>
+        <select class="filter-select" id="filter-result">
+          <option value="">전체</option>
+          <option value="당선">당선자만</option>
+          <option value="낙선">낙선자만</option>
+        </select>
+        <input type="text" class="search-input" id="cand-search" placeholder="이름·지역·정당 검색…">
+        <button class="btn-primary" id="cand-search-btn">검색</button>
+      </div>
+      <div class="card-grid" id="candidates-grid"></div>
+    </section>
+
+    <!-- 비교 -->
+    <section id="page-compare" class="page">
+      <div class="section-title">⚖️ 후보자 비교</div>
+      <p class="section-sub">같은 지역 후보자 2명을 선택해 정책·득표율을 나란히 비교하세요.</p>
+
+      <div class="filter-bar">
+        <select class="filter-select" id="compare-region">
+          <option value="">지역 선택</option>
+        </select>
+      </div>
+
+      <div class="compare-grid" id="compare-grid">
+        <div class="compare-card" id="compare-left">
+          <div class="loading"><div class="loading-spinner"></div><p>지역을 선택하세요</p></div>
+        </div>
+        <div class="compare-card" id="compare-right">
+          <div class="loading"><div class="loading-spinner"></div><p>지역을 선택하세요</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI 질문 -->
+    <section id="page-ai" class="page">
+      <div class="section-title">🤖 AI 질문</div>
+      <p class="section-sub">선거 정보, 후보자 공약, 투표 방법 등 무엇이든 물어보세요.</p>
+
+      <div class="suggested-qs">
+        <button class="sq-btn" data-q="서울 후보자는 누구인가요?">서울 후보자</button>
+        <button class="sq-btn" data-q="환경 관련 공약을 알려주세요">환경 공약</button>
+        <button class="sq-btn" data-q="더불어민주당은 어느 지역에서 당선됐나요?">민주당 당선 지역</button>
+        <button class="sq-btn" data-q="투표소는 어떻게 찾나요?">투표소 찾기</button>
+        <button class="sq-btn" data-q="사전투표 일정이 언제인가요?">사전투표 일정</button>
+        <button class="sq-btn" data-q="경기도 후보자 비교">경기도 비교</button>
+        <button class="sq-btn" data-q="청년 일자리 공약 알려줘">청년 일자리</button>
+        <button class="sq-btn" data-q="2026 선거 결과 요약해줘">선거 결과 요약</button>
+      </div>
+
+      <div id="ai-section">
+        <div id="chat-messages">
+          <div class="msg bot">
+            <div class="msg-avatar">🤖</div>
+            <div class="msg-bubble">
+              안녕하세요! 2026 지방선거 AI 도우미입니다.<br>
+              후보자 정보, 공약, 투표 안내 등 무엇이든 질문해 주세요.<br>
+              <span style="font-size:12px;color:var(--text-muted)">데이터 출처: 중앙선거관리위원회 · 공공데이터포털</span>
+            </div>
+          </div>
+        </div>
+        <div id="chat-input-area">
+          <input type="text" id="chat-input" placeholder="질문을 입력하세요… (예: 서울 당선자는 누구인가요?)" maxlength="200">
+          <button id="chat-send" class="btn-primary">전송</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 투표 안내 -->
+    <section id="page-guide" class="page">
+      <div class="section-title">📋 유권자 실용 가이드</div>
+      <p class="section-sub">투표 방법, 일정, 투표소 안내 — 공식 출처: 중앙선거관리위원회</p>
+
+      <div class="card" style="margin-bottom:16px" id="schedule-card">
+        <h3 style="font-size:17px;font-weight:700;margin-bottom:12px">📅 선거 일정</h3>
+        <ul class="schedule-list" id="schedule-list"></ul>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <h3 style="font-size:17px;font-weight:700;margin-bottom:12px">🗳️ 투표 방법</h3>
+        <ol style="padding-left:20px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+          <li>신분증(주민등록증·여권·운전면허증 등)을 지참합니다.</li>
+          <li>주소지 관할 투표소 또는 사전투표소를 방문합니다.</li>
+          <li>본인 확인 후 투표용지를 수령합니다.</li>
+          <li>기표소 안에서 기표 후 투표함에 넣습니다.</li>
+          <li>투표소 내 인증샷 촬영은 금지입니다.</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:17px;font-weight:700;margin-bottom:12px">🔗 공식 링크</h3>
+        <div class="official-links" id="official-links"></div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:12px">
+          ※ 투표소 위치·선거구 확인은 반드시 공식 선관위 홈페이지에서 확인하세요.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Candidate Detail Drawer ─────────────────────────────────────── -->
+  <div class="drawer-overlay" id="drawer-overlay">
+    <div class="drawer" id="drawer">
+      <button class="drawer-close" id="drawer-close">✕</button>
+      <div id="drawer-content"></div>
+    </div>
+  </div>
+
+  <!-- ── Mobile Nav ──────────────────────────────────────────────────── -->
+  <nav id="mobile-nav">
+    <a data-page="home"><span class="icon">🏠</span>홈</a>
+    <a data-page="candidates"><span class="icon">👤</span>후보자</a>
+    <a data-page="compare"><span class="icon">⚖️</span>비교</a>
+    <a data-page="ai"><span class="icon">🤖</span>AI</a>
+    <a data-page="guide"><span class="icon">📋</span>안내</a>
+  </nav>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────── -->
+  <footer>
+    데이터 출처: <a href="https://www.nec.go.kr" target="_blank" rel="noopener">중앙선거관리위원회</a> · <a href="https://www.data.go.kr" target="_blank" rel="noopener">공공데이터포털</a>
+    · AI 생성 정보로 공식 출처를 반드시 확인하세요.
+  </footer>
+
+</div>
+<!-- ── Predict Modal ────────────────────────────────────────────────── -->
+<div id="predict-modal">
+  <div id="predict-modal-inner">
+    <button id="predict-modal-close" onclick="window.closePredictModal()">✕</button>
+    <div id="predict-modal-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
