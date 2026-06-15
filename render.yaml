@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: election-2026-ai
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        generateValue: false
+    healthCheckPath: /api/health
+    autoDeploy: true
