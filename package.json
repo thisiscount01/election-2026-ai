@@ -1,0 +1,12 @@
+{
+  "name": "election-2026-ai",
+  "version": "1.0.0",
+  "description": "2026 대한민국 지방선거 AI 정보 서비스",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "collect": "node data/collector.js",
+    "index": "node -e \"require('./ai/pipeline').reindex()\""
+  },
+  "engines": { "node": ">=16" }
+}
