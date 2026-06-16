@@ -532,29 +532,33 @@ async function loadSchedule() {
 // ── Compare region filter ─────────────────────────────────────────────────────
 function buildCompareRegionFilter() {
   const sel = document.getElementById('compare-region');
-  // 후보자가 2명 이상인 지역만 비교 가능
-  const regionsWithTwoCands = allRegions.filter(r =>
-    allCandidates.filter(c => c.region_code === r.code).length >= 2
-  );
-  regionsWithTwoCands.forEach(r => {
+  // 모든 지역 표시 — 지역 간 교차 비교 지원
+  allRegions.forEach(r => {
     const opt = document.createElement('option');
     opt.value = r.code; opt.textContent = r.name; sel.appendChild(opt);
   });
   sel.addEventListener('change', () => {
     const code = sel.value;
     if (!code) return;
-    const regionCands = allCandidates.filter(c => c.region_code === code);
-    compareIds = regionCands.slice(0, 2).map(c => c.id);
+    const selCand = allCandidates.find(c => c.region_code === code);
+    if (!selCand) return;
+    // 선택 지역 후보(left) + 다음 후보(right) 교차 비교
+    const idx = allCandidates.indexOf(selCand);
+    const otherCand = allCandidates[idx === allCandidates.length - 1 ? 0 : idx + 1];
+    compareIds = otherCand ? [selCand.id, otherCand.id] : [selCand.id];
     renderCompare();
     if (compareIds.length >= 2) track(EVENTS.CANDIDATE_COMPARE, { candidate_ids: compareIds, region_code: code });
   });
 
-  // 서울 기본 비교 (첫 진입 시 즉시 콘텐츠 표시)
-  const seoulCands = allCandidates.filter(c => c.region_code === '11');
-  if (seoulCands.length >= 2 && compareIds.length < 2) {
-    sel.value = '11';
-    compareIds = seoulCands.slice(0, 2).map(c => c.id);
-    renderCompare();
+  // 서울(11) vs 부산(21) 기본 비교 — 데이터 도착 즉시 콘텐츠 표시
+  if (allCandidates.length >= 2 && compareIds.length < 2) {
+    const candA = allCandidates.find(c => c.region_code === '11') || allCandidates[0];
+    const candB = allCandidates.find(c => c.region_code === '21') || allCandidates[1];
+    if (candA && candB) {
+      sel.value = candA.region_code || '';
+      compareIds = [candA.id, candB.id];
+      renderCompare();
+    }
   }
 }
 
@@ -668,11 +672,16 @@ async function init() {
   // ① 리스너 즉시 등록 — fetch 완료를 기다리지 않음
   _bindListeners();
 
+  // 로딩 경과 시간 표시 — cold-start 대기 사용자에게 진행 상황 안내
+  const _startMs = Date.now();
+  const plSub = document.querySelector('#page-loading .pl-sub');
+  const _loadTimer = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - _startMs) / 1000);
+    if (plSub) plSub.innerHTML = `서버를 깨우는 중… (${elapsed}초)<br><small>처음 접속 시 20~30초 소요될 수 있습니다</small>`;
+  }, 1000);
+
   // ② UI 셸 즉시 표시 (데이터 없어도 네비게이션·골격 동작)
   goTo('home');
-
-  // ③ 오버레이 3초 후 해제 — 데이터 fetch와 완전히 독립
-  setTimeout(_hideOverlay, 3000);
 
   // ④ Cold-start 대응 fetch 헬퍼
   function fetchWithRetry(url, maxWaitMs, intervalMs) {
@@ -689,9 +698,10 @@ async function init() {
 
   // ⑤ 백그라운드 데이터 fetch — UI를 블로킹하지 않음
   Promise.all([
-    fetchWithRetry(`${API}/api/candidates?limit=100`, 35000, 3000),
-    fetchWithRetry(`${API}/api/regions`, 35000, 3000),
+    fetchWithRetry(`${API}/api/candidates?limit=100`, 40000, 4000),
+    fetchWithRetry(`${API}/api/regions`, 40000, 4000),
   ]).then(async ([candRes, regRes]) => {
+    clearInterval(_loadTimer);
     const candData = await candRes.json();
     const regData  = await regRes.json();
     allCandidates  = candData.data || [];
@@ -718,6 +728,7 @@ async function init() {
     detectRegionOnLoad();
 
   }).catch(e => {
+    clearInterval(_loadTimer);
     console.error('데이터 로드 오류:', e);
     _hideOverlay();
     const homeEl = document.getElementById('page-home');
